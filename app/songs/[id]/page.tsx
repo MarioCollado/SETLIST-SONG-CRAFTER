@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import { getSongWithSections } from '@/lib/db'
@@ -26,7 +29,7 @@ export default async function SongDetailPage({ params }: SongDetailPageProps) {
   }
 
   return (
-    <div className="min-h-dvh bg-[var(--bg)] pb-12">
+    <div className="min-h-dvh bg-[var(--bg)]">
       <SongEditorClient initialSong={song} userId={user.id} />
     </div>
   )

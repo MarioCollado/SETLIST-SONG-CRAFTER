@@ -3,6 +3,7 @@
 import type { SectionWithEvents } from '@/types'
 import { SECTION_COLORS } from '@/types'
 import EventBadge from './EventBadge'
+import { useI18n } from '@/lib/i18n/context'
 
 interface SectionCardProps {
   section: SectionWithEvents
@@ -27,13 +28,14 @@ export default function SectionCard({
   onDeleteEvent,
   onAddEvent,
 }: SectionCardProps) {
+  const { t } = useI18n()
   const color = SECTION_COLORS[section.type]
   const displayName = section.label || section.type.toUpperCase()
 
   return (
     <div className="card flex overflow-hidden animate-fade-in">
       {/* Left color bar */}
-      <div className="w-1 flex-shrink-0" style={{ backgroundColor: color }} />
+      <div className="w-1.5 flex-shrink-0" style={{ backgroundColor: color }} />
 
       {/* Main content */}
       <div className="flex-1 p-3 min-w-0">
@@ -53,11 +55,11 @@ export default function SectionCard({
               {displayName}
             </p>
             <p className="text-xs text-[var(--t-dim)] mt-0.5">
-              Bars {section.bar_start}–{section.bar_end}
+              {t('bar_abbr')}{section.bar_start}–{section.bar_end}
               {section.bpm_override && (
                 <>
                   {' · '}
-                  <span className="text-[var(--t-sec)]">{section.bpm_override} BPM</span>
+                  <span className="text-[var(--t-sec)] font-mono">{section.bpm_override} BPM</span>
                 </>
               )}
             </p>
@@ -88,7 +90,7 @@ export default function SectionCard({
             <button
               onClick={() => onEdit(section)}
               className="btn-ghost w-8 h-8 min-h-0 min-w-0"
-              aria-label="Edit section"
+              aria-label={t('edit')}
             >
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9.5 1.5l2 2-7 7H2.5v-2l7-7z" />
@@ -96,10 +98,10 @@ export default function SectionCard({
             </button>
             <button
               onClick={() => {
-                if (confirm('Delete this section and all its cues?')) onDelete(section.id)
+                if (confirm(t('delete_section_confirm'))) onDelete(section.id)
               }}
               className="btn-danger w-8 h-8 min-h-0 min-w-0"
-              aria-label="Delete section"
+              aria-label={t('delete')}
             >
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                 <path d="M1.5 1.5l10 10M11.5 1.5l-10 10" />
@@ -133,7 +135,7 @@ export default function SectionCard({
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M5 1v8M1 5h8" />
             </svg>
-            Add cue
+            {t('add_cue')}
           </button>
         </div>
       </div>

@@ -10,6 +10,8 @@ import type {
   Event as SongEvent,
 } from '@/types'
 import { SECTION_COLORS, EVENT_COLORS } from '@/types'
+import { useI18n } from '@/lib/i18n/context'
+import LanguageSelector from '@/components/ui/LanguageSelector'
 
 // ─── Inline Monochromatic Event Icons ─────────────────────────────────────────
 function EventIcon({ type }: { type: EventType }) {
@@ -75,10 +77,12 @@ interface PerformanceViewProps {
 }
 
 export default function PerformanceView({ setlist }: PerformanceViewProps) {
+  const { t } = useI18n()
   const songs = setlist.setlist_songs
   const [currentIndex, setCurrentIndex] = useState(0)
   const [zoom, setZoom] = useState<ZoomLevel>('MEDIUM')
   const [showDrawer, setShowDrawer] = useState(false)
+  const [drawerSearch, setDrawerSearch] = useState('')
   const [wakeLockActive, setWakeLockActive] = useState(false)
 
   // Current song item
@@ -123,6 +127,12 @@ export default function PerformanceView({ setlist }: PerformanceViewProps) {
     })
   }
 
+  const getZoomLabel = () => {
+    if (zoom === 'FULL') return t('zoom_full')
+    if (zoom === 'MINIMAL') return t('zoom_minimal')
+    return t('zoom_medium')
+  }
+
   // Keyboard navigation (Bluetooth pedals / arrow keys / space)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -151,20 +161,39 @@ export default function PerformanceView({ setlist }: PerformanceViewProps) {
       return {
         id: s.id,
         color: SECTION_COLORS[s.type] || '#5A6470',
-        pct: Math.max(pct, 2), // minimum visible tick
+        pct: Math.max(pct, 2),
       }
     })
   }, [currentSong?.sections])
 
+  // Filtered songs for the drawer search
+  const filteredDrawerSongs = useMemo(() => {
+    if (!drawerSearch.trim()) {
+      return songs.map((item, idx) => ({ item, idx }))
+    }
+    const q = drawerSearch.toLowerCase().trim()
+    return songs
+      .map((item, idx) => ({ item, idx }))
+      .filter(
+        ({ item }) =>
+          item.song.title.toLowerCase().includes(q) ||
+          (item.song.key && item.song.key.toLowerCase().includes(q)) ||
+          (item.song.bpm_default && item.song.bpm_default.toString().includes(q)) ||
+          (item.override_notes && item.override_notes.toLowerCase().includes(q))
+      )
+  }, [songs, drawerSearch])
+
   if (!currentSong) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center p-6 text-center bg-[var(--bg)]">
-        <p className="text-xl font-bold text-[var(--t-pri)] mb-2">No songs in this setlist</p>
+        <p className="text-xl font-bold text-[var(--t-pri)] mb-2">
+          {t('no_songs_in_setlist')}
+        </p>
         <p className="text-sm text-[var(--t-dim)] mb-6">
-          Add songs to &ldquo;{setlist.title}&rdquo; to start performance mode.
+          {setlist.title}
         </p>
         <Link href={`/setlists/${setlist.id}`} className="btn-primary px-6 py-2 text-sm">
-          Return to Setlist
+          {t('exit_to_editor')}
         </Link>
       </div>
     )
@@ -176,9 +205,12 @@ export default function PerformanceView({ setlist }: PerformanceViewProps) {
       <header className="flex h-12 flex-shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--s1)] px-3">
         {/* Menu / Song picker button */}
         <button
-          onClick={() => setShowDrawer(true)}
+          onClick={() => {
+            setDrawerSearch('')
+            setShowDrawer(true)
+          }}
           className="btn-ghost w-10 h-10 min-h-0 min-w-0"
-          aria-label="Setlist menu"
+          aria-label={t('setlist_drawer')}
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
             <path
@@ -192,27 +224,30 @@ export default function PerformanceView({ setlist }: PerformanceViewProps) {
         {/* Center label */}
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-extrabold uppercase tracking-widest text-[var(--t-sec)]">
-            PERFORMANCE MODE
+            {t('performance_mode')}
           </span>
           {wakeLockActive && (
             <span
-              className="w-1.5 h-1.5 rounded-full bg-emerald-500"
+              className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"
               title="Screen WakeLock Active"
             />
           )}
         </div>
 
-        {/* Exit back to setlist */}
-        <Link
-          href={`/setlists/${setlist.id}`}
-          className="btn-ghost w-10 h-10 min-h-0 min-w-0 text-[var(--t-sec)]"
-          aria-label="Exit performance mode"
-        >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="14" y1="4" x2="4" y2="14" />
-            <line x1="4" y1="4" x2="14" y2="14" />
-          </svg>
-        </Link>
+        {/* Right actions: Language + Exit */}
+        <div className="flex items-center gap-1">
+          <LanguageSelector />
+          <Link
+            href={`/setlists/${setlist.id}`}
+            className="btn-ghost w-10 h-10 min-h-0 min-w-0 text-[var(--t-sec)]"
+            aria-label="Exit performance mode"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="14" y1="4" x2="4" y2="14" />
+              <line x1="4" y1="4" x2="14" y2="14" />
+            </svg>
+          </Link>
+        </div>
       </header>
 
       {/* ─── SONG INFO ────────────────────────────────────────────────────────── */}
@@ -222,7 +257,8 @@ export default function PerformanceView({ setlist }: PerformanceViewProps) {
             {currentSong.title}
           </h1>
           <span className="text-xs font-mono font-bold text-[var(--t-dim)] flex-shrink-0">
-            {currentIndex + 1 < 10 ? `0${currentIndex + 1}` : currentIndex + 1}/{songs.length < 10 ? `0${songs.length}` : songs.length}
+            {currentIndex + 1 < 10 ? `0${currentIndex + 1}` : currentIndex + 1}/
+            {songs.length < 10 ? `0${songs.length}` : songs.length}
           </span>
         </div>
 
@@ -231,13 +267,13 @@ export default function PerformanceView({ setlist }: PerformanceViewProps) {
           {currentSong.bpm_default ? (
             <span className="text-white font-bold">{currentSong.bpm_default} BPM</span>
           ) : (
-            <span className="text-[var(--t-dim)]">NO BPM</span>
+            <span className="text-[var(--t-dim)]">{t('no_bpm')}</span>
           )}
           <span className="text-[var(--t-dim)]">•</span>
           {currentSong.key ? (
             <span className="text-amber-400 font-bold">{currentSong.key}</span>
           ) : (
-            <span className="text-[var(--t-dim)]">NO KEY</span>
+            <span className="text-[var(--t-dim)]">{t('no_key')}</span>
           )}
           <span className="text-[var(--t-dim)]">•</span>
           <span className="text-[var(--t-sec)]">{currentSong.time_signature || '4/4'}</span>
@@ -252,7 +288,7 @@ export default function PerformanceView({ setlist }: PerformanceViewProps) {
         {/* Live override note for this gig if set */}
         {currentSetlistSong.override_notes && (
           <div className="mt-2 rounded bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 text-xs text-amber-200">
-            <span className="font-bold mr-1.5 uppercase text-[10px]">CUE:</span>
+            <span className="font-bold mr-1.5 uppercase text-[10px]">{t('live_cue')}</span>
             {currentSetlistSong.override_notes}
           </div>
         )}
@@ -276,7 +312,7 @@ export default function PerformanceView({ setlist }: PerformanceViewProps) {
       <main className="flex-1 overflow-y-auto p-3 space-y-2 overscroll-none">
         {(!currentSong.sections || currentSong.sections.length === 0) ? (
           <div className="text-center py-16 text-sm text-[var(--t-dim)]">
-            No sections defined for this song.
+            {t('no_sections_defined')}
           </div>
         ) : (
           currentSong.sections.map((section: SectionWithEvents, idx: number) => {
@@ -358,7 +394,7 @@ export default function PerformanceView({ setlist }: PerformanceViewProps) {
                         </span>
                       )}
                       <span className="text-xs font-mono text-[var(--t-sec)]">
-                        b.{section.bar_start}–{section.bar_end}
+                        {t('bar_abbr')}{section.bar_start}–{section.bar_end}
                       </span>
                     </div>
                   </div>
@@ -393,7 +429,7 @@ export default function PerformanceView({ setlist }: PerformanceViewProps) {
                             </span>
                             {ev.bar_number && (
                               <span className="font-mono text-[10px] text-[var(--t-sec)]">
-                                b{ev.bar_number}{ev.beat_number ? `.${ev.beat_number}` : ''}
+                                {t('bar_abbr')}{ev.bar_number}{ev.beat_number ? `.${ev.beat_number}` : ''}
                               </span>
                             )}
                             {zoom === 'FULL' && ev.notes && (
@@ -419,45 +455,58 @@ export default function PerformanceView({ setlist }: PerformanceViewProps) {
         <button
           onClick={cycleZoom}
           className="btn-ghost flex items-center gap-1.5 px-3 text-xs font-bold uppercase tracking-wider text-[var(--t-sec)] hover:text-white"
-          title="Toggle Zoom / Density"
+          title={t('zoom')}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="5.5" cy="5.5" r="4" />
             <line x1="8.5" y1="8.5" x2="13" y2="13" />
           </svg>
-          <span>{zoom}</span>
+          <span>{getZoomLabel()}</span>
         </button>
 
         {/* Prev / Next controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {/* PREVIOUS TRACK: Bar on left, arrow pointing LEFT */}
           <button
             onClick={handlePrev}
             disabled={currentIndex === 0}
-            className="btn-ghost w-12 h-12 rounded-xl border border-[var(--border)] bg-[var(--s2)] disabled:opacity-20 flex items-center justify-center text-white"
-            aria-label="Previous song"
+            className="btn-ghost w-12 h-12 rounded-xl border border-[var(--border)] bg-[var(--s2)] disabled:opacity-20 flex items-center justify-center text-white active:scale-95 transition-transform"
+            aria-label={t('previous_song')}
+            title={t('previous_song')}
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M4 4h2v12H4V4zm12 8l-8-6v12l8-6z" />
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+              {/* Vertical Bar on left */}
+              <rect x="4" y="4" width="2.5" height="12" rx="0.5" />
+              {/* Triangle pointing left */}
+              <polygon points="16,4 7.5,10 16,16" />
             </svg>
           </button>
 
+          {/* NEXT TRACK: Triangle pointing right, bar on right */}
           <button
             onClick={handleNext}
             disabled={currentIndex === songs.length - 1}
-            className="btn-primary w-12 h-12 rounded-xl flex items-center justify-center font-bold disabled:opacity-20"
-            aria-label="Next song"
+            className="btn-primary w-12 h-12 rounded-xl flex items-center justify-center font-bold disabled:opacity-20 active:scale-95 transition-transform"
+            aria-label={t('next_song')}
+            title={t('next_song')}
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M14 4h2v12h-2V4zM4 16l8-6-8-6v12z" />
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+              {/* Triangle pointing right */}
+              <polygon points="4,4 12.5,10 4,16" />
+              {/* Vertical Bar on right */}
+              <rect x="13.5" y="4" width="2.5" height="12" rx="0.5" />
             </svg>
           </button>
         </div>
 
         {/* Setlist Song Index & Quick Drawer */}
         <button
-          onClick={() => setShowDrawer(true)}
+          onClick={() => {
+            setDrawerSearch('')
+            setShowDrawer(true)
+          }}
           className="btn-ghost flex items-center gap-1.5 px-3 text-xs font-bold text-[var(--t-sec)] hover:text-white"
-          title="Open Setlist Song Picker"
+          title={t('setlist_drawer')}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
             <rect x="1" y="2" width="12" height="2" rx="0.5" />
@@ -471,15 +520,24 @@ export default function PerformanceView({ setlist }: PerformanceViewProps) {
         </button>
       </footer>
 
-      {/* ─── SETLIST DRAWER / QUICK JUMP MODAL ─────────────────────────────────── */}
+      {/* ─── SETLIST DRAWER / QUICK JUMP MODAL WITH SEARCH ────────────────────── */}
       {showDrawer && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" onClick={() => setShowDrawer(false)} />
-          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] p-5 max-h-[85dvh] overflow-y-auto animate-slide-up">
-            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)] mb-4">
-              <h2 className="text-base font-extrabold uppercase tracking-wide text-white">
-                {setlist.title}
-              </h2>
+          <div
+            className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm animate-fade-in"
+            onClick={() => setShowDrawer(false)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] p-4 max-h-[88dvh] flex flex-col animate-slide-up pb-8">
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+              <div>
+                <h2 className="text-sm font-extrabold uppercase tracking-wide text-white">
+                  {setlist.title}
+                </h2>
+                <p className="text-2xs text-[var(--t-dim)]">
+                  {songs.length} {t('songs_count')}
+                </p>
+              </div>
               <button
                 onClick={() => setShowDrawer(false)}
                 className="btn-ghost w-8 h-8 min-h-0 min-w-0"
@@ -488,46 +546,96 @@ export default function PerformanceView({ setlist }: PerformanceViewProps) {
               </button>
             </div>
 
-            <div className="space-y-1.5 max-h-[60dvh] overflow-y-auto">
-              {songs.map((item, idx) => {
-                const isSelected = idx === currentIndex
-                return (
+            {/* Search Input in Drawer */}
+            <div className="pt-3 pb-2">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={drawerSearch}
+                  onChange={(e) => setDrawerSearch(e.target.value)}
+                  placeholder={t('search_song_in_setlist')}
+                  className="input pl-9 pr-8 text-xs py-2"
+                  style={{ minHeight: '38px' }}
+                  autoFocus
+                />
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  stroke="var(--t-dim)"
+                  strokeWidth="2"
+                  className="absolute left-3 top-3"
+                >
+                  <circle cx="5.5" cy="5.5" r="4" />
+                  <line x1="8.5" y1="8.5" x2="13" y2="13" />
+                </svg>
+                {drawerSearch && (
                   <button
-                    key={item.id}
-                    onClick={() => {
-                      setCurrentIndex(idx)
-                      setShowDrawer(false)
-                    }}
-                    className={`w-full text-left p-3 rounded-xl border flex items-center justify-between transition-colors ${
-                      isSelected
-                        ? 'border-[var(--t-pri)] bg-[var(--s3)]'
-                        : 'border-[var(--border)] bg-[var(--s2)] hover:border-[var(--t-dim)]'
-                    }`}
+                    onClick={() => setDrawerSearch('')}
+                    className="absolute right-2.5 top-2.5 text-xs text-[var(--t-dim)] hover:text-white"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="font-mono text-xs font-bold text-[var(--t-dim)]">
-                        {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
-                      </span>
-                      <span className={`text-sm font-bold truncate ${isSelected ? 'text-white' : 'text-[var(--t-pri)]'}`}>
-                        {item.song.title}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs font-mono text-[var(--t-dim)] flex-shrink-0">
-                      {item.song.key && <span>{item.song.key}</span>}
-                      {item.song.bpm_default && <span>{item.song.bpm_default} BPM</span>}
-                    </div>
+                    ✕
                   </button>
-                )
-              })}
+                )}
+              </div>
             </div>
 
-            <div className="mt-5 pt-3 border-t border-[var(--border)]">
+            {/* Songs List */}
+            <div className="space-y-1.5 overflow-y-auto flex-1 my-1 pr-1">
+              {filteredDrawerSongs.length === 0 ? (
+                <div className="text-center py-10 text-xs text-[var(--t-dim)]">
+                  {t('no_songs_yet')}
+                </div>
+              ) : (
+                filteredDrawerSongs.map(({ item, idx }) => {
+                  const isSelected = idx === currentIndex
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setCurrentIndex(idx)
+                        setShowDrawer(false)
+                      }}
+                      className={`w-full text-left p-3 rounded-xl border flex items-center justify-between transition-colors ${
+                        isSelected
+                          ? 'border-[var(--t-pri)] bg-[var(--s3)]'
+                          : 'border-[var(--border)] bg-[var(--s2)] hover:border-[var(--t-dim)]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="font-mono text-xs font-bold text-[var(--t-dim)]">
+                          {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <span className={`text-sm font-bold truncate block ${isSelected ? 'text-white' : 'text-[var(--t-pri)]'}`}>
+                            {item.song.title}
+                          </span>
+                          {item.override_notes && (
+                            <span className="text-2xs text-amber-300 block truncate">
+                              {item.override_notes}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-xs font-mono text-[var(--t-dim)] flex-shrink-0">
+                        {item.song.key && <span className="text-amber-400">{item.song.key}</span>}
+                        {item.song.bpm_default && <span>{item.song.bpm_default} BPM</span>}
+                      </div>
+                    </button>
+                  )
+                })
+              )}
+            </div>
+
+            {/* Footer exit link */}
+            <div className="pt-2 border-t border-[var(--border)] mt-auto">
               <Link
                 href={`/setlists/${setlist.id}`}
                 className="btn-ghost w-full py-2.5 text-xs font-bold text-center block text-[var(--t-sec)] hover:text-white"
               >
-                ← Exit Performance Mode to Editor
+                {t('exit_to_editor')}
               </Link>
             </div>
           </div>

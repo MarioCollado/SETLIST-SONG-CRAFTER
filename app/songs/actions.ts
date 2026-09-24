@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server'
 import { createSong } from '@/lib/db'
+import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 export async function createNewSong() {
@@ -20,5 +21,6 @@ export async function createNewSong() {
     notes: null,
   })
 
+  revalidatePath('/songs')
   redirect(`/songs/${song.id}`)
 }

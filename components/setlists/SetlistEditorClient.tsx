@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { SetlistWithSongs, Song, SetlistSongWithSong } from '@/types'
 import { createClient } from '@/lib/supabase-client'
+import { useI18n } from '@/lib/i18n/context'
+import LanguageSelector from '@/components/ui/LanguageSelector'
 
 interface SetlistEditorClientProps {
   initialSetlist: SetlistWithSongs
@@ -17,6 +19,7 @@ export default function SetlistEditorClient({
   availableSongs,
   userId,
 }: SetlistEditorClientProps) {
+  const { t } = useI18n()
   const router = useRouter()
   const [setlist, setSetlist] = useState<SetlistWithSongs>(initialSetlist)
 
@@ -34,6 +37,7 @@ export default function SetlistEditorClient({
   const [showAddModal, setShowAddModal] = useState(false)
   const [selectedSongId, setSelectedSongId] = useState<string>('')
   const [addingSong, setAddingSong] = useState(false)
+  const [songSearchQuery, setSongSearchQuery] = useState('')
 
   // Override note edit modal / state
   const [editingNoteForSong, setEditingNoteForSong] = useState<SetlistSongWithSong | null>(null)
@@ -62,9 +66,10 @@ export default function SetlistEditorClient({
       if (error) throw error
       setSetlist((prev) => ({ ...prev, ...data }))
       setMetaSaved(true)
+      router.refresh()
       setTimeout(() => setMetaSaved(false), 2000)
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Failed to update setlist.')
+      alert(err instanceof Error ? err.message : 'Error.')
     } finally {
       setSavingMeta(false)
     }
@@ -99,7 +104,7 @@ export default function SetlistEditorClient({
   // ── Remove song ───────────────────────────────────────────────────────────
 
   async function handleRemoveSong(songId: string) {
-    if (!confirm('Remove this song from the setlist?')) return
+    if (!confirm(t('confirm_delete'))) return
 
     const { error } = await supabase
       .from('setlist_songs')
@@ -117,6 +122,7 @@ export default function SetlistEditorClient({
       .map((item, idx) => ({ ...item, order_index: idx }))
 
     setSetlist((prev) => ({ ...prev, setlist_songs: updated }))
+    router.refresh()
   }
 
   // ── Add song ──────────────────────────────────────────────────────────────
@@ -156,8 +162,10 @@ export default function SetlistEditorClient({
 
       setShowAddModal(false)
       setSelectedSongId('')
+      setSongSearchQuery('')
+      router.refresh()
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error adding song to setlist.')
+      alert(err instanceof Error ? err.message : 'Error.')
     } finally {
       setAddingSong(false)
     }
@@ -185,34 +193,47 @@ export default function SetlistEditorClient({
       }))
 
       setEditingNoteForSong(null)
+      router.refresh()
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Error saving notes.')
+      alert(err instanceof Error ? err.message : 'Error.')
     }
   }
 
   // ── Delete setlist ────────────────────────────────────────────────────────
 
   async function handleDeleteSetlist() {
-    if (!confirm(`Are you sure you want to delete "${setlist.title}"?`)) return
+    if (!confirm(t('delete_setlist_confirm'))) return
     const { error } = await supabase.from('setlists').delete().eq('id', setlist.id)
     if (error) {
       alert(error.message)
       return
     }
     router.push('/setlists')
+    router.refresh()
   }
 
   const existingSongIds = new Set(setlist.setlist_songs.map((s) => s.song_id))
-  const candidateSongs = availableSongs.filter((s) => !existingSongIds.has(s.id))
+  const candidateSongs = availableSongs
+    .filter((s) => !existingSongIds.has(s.id))
+    .filter((s) => {
+      if (!songSearchQuery.trim()) return true
+      const q = songSearchQuery.toLowerCase().trim()
+      return (
+        s.title.toLowerCase().includes(q) ||
+        (s.key && s.key.toLowerCase().includes(q)) ||
+        (s.bpm_default && s.bpm_default.toString().includes(q)) ||
+        (s.genre && s.genre.toLowerCase().includes(q))
+      )
+    })
 
   return (
-    <>
+    <div className="pb-28">
       {/* Top Header */}
       <header className="flex items-center gap-3 px-4 py-4 border-b border-[var(--border)] bg-[var(--s1)] sticky top-0 z-20">
         <Link
           href="/setlists"
           className="btn-ghost w-10 h-10 min-h-0 min-w-0"
-          aria-label="Back to setlists"
+          aria-label={t('back')}
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M11 4L6 9l5 5" />
@@ -221,11 +242,12 @@ export default function SetlistEditorClient({
         <h1 className="flex-1 text-base font-bold text-[var(--t-pri)] uppercase tracking-wide truncate">
           {setlist.title}
         </h1>
+        <LanguageSelector />
         <button
           type="button"
           onClick={handleDeleteSetlist}
           className="btn-danger w-10 h-10 min-h-0 min-w-0"
-          aria-label="Delete setlist"
+          aria-label={t('delete')}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M2 4h12M6 4V2h4v2M13 4l-1 10H4L3 4" />
@@ -237,20 +259,20 @@ export default function SetlistEditorClient({
       <div className="mx-4 mt-4">
         <Link
           href={`/setlists/${setlist.id}/perform`}
-          className="btn-primary w-full py-3.5 flex items-center justify-center gap-2 text-sm font-extrabold uppercase tracking-wider rounded-xl shadow-lg"
+          className="btn-primary w-full py-3.5 flex items-center justify-center gap-2 text-sm font-extrabold uppercase tracking-wider rounded-xl shadow-lg active:scale-[0.99] transition-transform"
           style={{ minHeight: '48px' }}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <polygon points="3,2 14,8 3,14" />
           </svg>
-          Enter Performance Mode
+          {t('enter_performance_mode')}
         </Link>
       </div>
 
       {/* Setlist Details Card */}
       <div className="card mx-4 mt-4 p-4 space-y-4">
         <div>
-          <label className="label">Title</label>
+          <label className="label">{t('setlist_title')}</label>
           <input
             type="text"
             value={meta.title}
@@ -261,7 +283,7 @@ export default function SetlistEditorClient({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="label">Date</label>
+            <label className="label">{t('date')}</label>
             <input
               type="date"
               value={meta.date}
@@ -270,24 +292,24 @@ export default function SetlistEditorClient({
             />
           </div>
           <div>
-            <label className="label">Venue</label>
+            <label className="label">{t('venue')}</label>
             <input
               type="text"
               value={meta.venue}
               onChange={(e) => setMeta((m) => ({ ...m, venue: e.target.value }))}
-              placeholder="e.g. Club Red, Sala Sol"
+              placeholder={t('venue_placeholder')}
               className="input"
             />
           </div>
         </div>
 
         <div>
-          <label className="label">General Notes</label>
+          <label className="label">{t('general_notes')}</label>
           <textarea
             value={meta.notes}
             onChange={(e) => setMeta((m) => ({ ...m, notes: e.target.value }))}
             rows={2}
-            placeholder="Soundcheck time, gear to bring, order changes..."
+            placeholder={t('general_notes_placeholder')}
             className="input resize-none"
           />
         </div>
@@ -296,36 +318,40 @@ export default function SetlistEditorClient({
           type="button"
           onClick={handleSaveMeta}
           disabled={savingMeta}
-          className="btn-primary w-full text-xs font-semibold py-2 disabled:opacity-50"
-          style={{ minHeight: '38px' }}
+          className="btn-primary w-full text-xs font-bold py-2.5 rounded-xl disabled:opacity-50"
+          style={{ minHeight: '42px' }}
         >
-          {savingMeta ? 'Saving…' : metaSaved ? '✓ Saved' : 'Save Setlist Info'}
+          {savingMeta ? t('saving') : metaSaved ? t('saved') : t('save_setlist_info')}
         </button>
       </div>
 
       {/* Setlist Songs Section */}
       <div className="px-4 mt-6 mb-2 flex items-center justify-between">
         <h2 className="text-xs font-bold uppercase tracking-widest text-[var(--t-sec)]">
-          Setlist Songs{' '}
+          {t('setlist_songs_title')}{' '}
           <span className="text-[var(--t-dim)] ml-1">({setlist.setlist_songs.length})</span>
         </h2>
         <button
           type="button"
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {
+            setSongSearchQuery('')
+            setSelectedSongId('')
+            setShowAddModal(true)
+          }}
           className="btn-ghost h-8 min-h-0 px-3 text-xs gap-1.5"
         >
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M5.5 1v9M1 5.5h9" />
           </svg>
-          Add Song
+          {t('add_song')}
         </button>
       </div>
 
       {/* Songs list */}
-      <div className="px-4 pb-12 space-y-2">
+      <div className="px-4 space-y-2">
         {setlist.setlist_songs.length === 0 ? (
           <div className="card text-center py-10 px-4 text-sm text-[var(--t-dim)]">
-            No songs in this setlist yet. Tap &ldquo;Add Song&rdquo; to build your set.
+            {t('no_songs_in_setlist_editor')}
           </div>
         ) : (
           setlist.setlist_songs.map((item, index) => {
@@ -354,7 +380,7 @@ export default function SetlistEditorClient({
                         {song.key && <span className="text-[var(--t-sec)]">{song.key}</span>}
                         {song.bpm_default && <span>{song.bpm_default} BPM</span>}
                         {song.time_signature && <span>{song.time_signature}</span>}
-                        <span>{song.sections?.length ?? 0} sections</span>
+                        <span>{song.sections?.length ?? 0} {t('sections').toLowerCase()}</span>
                       </p>
                     </div>
 
@@ -383,7 +409,7 @@ export default function SetlistEditorClient({
                       <button
                         onClick={() => handleRemoveSong(song.id)}
                         className="btn-danger w-7 h-7 min-h-0 min-w-0 ml-1"
-                        title="Remove"
+                        title={t('delete')}
                       >
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M1.5 1.5l9 9M10.5 1.5l-9 9" />
@@ -395,7 +421,7 @@ export default function SetlistEditorClient({
                   {/* Override notes pill / button */}
                   <div className="mt-2 pt-2 border-t border-[var(--border)] flex items-center justify-between">
                     <span className="text-2xs text-[var(--t-dim)] uppercase tracking-wide">
-                      Live Notes:
+                      {t('live_notes_label')}
                     </span>
                     <button
                       type="button"
@@ -405,7 +431,7 @@ export default function SetlistEditorClient({
                       }}
                       className="text-xs text-[var(--t-sec)] hover:text-[var(--t-pri)] truncate max-w-[200px]"
                     >
-                      {item.override_notes ? item.override_notes : '+ Add note for this show'}
+                      {item.override_notes ? item.override_notes : t('add_live_note')}
                     </button>
                   </div>
                 </div>
@@ -415,27 +441,59 @@ export default function SetlistEditorClient({
         )}
       </div>
 
-      {/* Modal: Add Song to Setlist */}
+      {/* Modal: Add Song to Setlist (Elevated with Sticky Footer) */}
       {showAddModal && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/60" onClick={() => setShowAddModal(false)} />
-          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] animate-slide-up p-5 max-h-[85dvh] overflow-y-auto">
-            <h2 className="text-base font-bold text-[var(--t-pri)] mb-4">
-              Add Song to Setlist
-            </h2>
+          <div
+            className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm animate-fade-in"
+            onClick={() => setShowAddModal(false)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] animate-slide-up flex flex-col max-h-[88dvh]">
+            <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="w-10 h-1 rounded-full bg-[var(--border)]" />
+            </div>
 
-            {candidateSongs.length === 0 ? (
-              <p className="text-sm text-[var(--t-dim)] py-6 text-center">
-                All songs in your library are already in this setlist, or library is empty.
-              </p>
-            ) : (
-              <div className="space-y-2 mb-6 max-h-[50dvh] overflow-y-auto">
-                {candidateSongs.map((s) => (
+            <div className="px-5 pt-1 pb-3 flex-shrink-0 border-b border-[var(--border)]">
+              <h2 className="text-base font-bold text-[var(--t-pri)]">
+                {t('add_song_modal_title')}
+              </h2>
+              {/* Quick Search */}
+              <div className="mt-2.5 relative">
+                <input
+                  type="text"
+                  value={songSearchQuery}
+                  onChange={(e) => setSongSearchQuery(e.target.value)}
+                  placeholder={t('search')}
+                  className="input pl-8 text-xs py-2"
+                  style={{ minHeight: '36px' }}
+                />
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  stroke="var(--t-dim)"
+                  strokeWidth="2"
+                  className="absolute left-2.5 top-2.5"
+                >
+                  <circle cx="5.5" cy="5.5" r="4" />
+                  <line x1="8.5" y1="8.5" x2="13" y2="13" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="px-5 py-3 overflow-y-auto flex-1 space-y-2">
+              {candidateSongs.length === 0 ? (
+                <p className="text-xs text-[var(--t-dim)] py-8 text-center">
+                  {t('all_songs_in_setlist')}
+                </p>
+              ) : (
+                candidateSongs.map((s) => (
                   <button
                     key={s.id}
                     type="button"
                     onClick={() => setSelectedSongId(s.id)}
-                    className={`w-full text-left p-3 rounded-lg border transition-colors flex items-center justify-between ${
+                    className={`w-full text-left p-3 rounded-xl border transition-colors flex items-center justify-between ${
                       selectedSongId === s.id
                         ? 'border-[var(--t-pri)] bg-[var(--s3)]'
                         : 'border-[var(--border)] bg-[var(--s2)] hover:border-[var(--t-dim)]'
@@ -445,78 +503,93 @@ export default function SetlistEditorClient({
                       <p className="text-sm font-semibold text-[var(--t-pri)]">{s.title}</p>
                       <p className="text-xs text-[var(--t-dim)] mt-0.5">
                         {s.key && `${s.key} • `}
-                        {s.bpm_default ? `${s.bpm_default} BPM` : 'BPM unset'}
+                        {s.bpm_default ? `${s.bpm_default} BPM` : 'BPM —'}
                       </p>
                     </div>
                     {selectedSongId === s.id && (
-                      <span className="text-xs font-bold text-[var(--t-pri)]">Selected</span>
+                      <span className="text-xs font-bold text-[var(--t-pri)]">✓</span>
                     )}
                   </button>
-                ))}
-              </div>
-            )}
+                ))
+              )}
+            </div>
 
-            <div className="flex gap-3">
+            {/* Elevated Sticky Actions Footer */}
+            <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--s2)] px-5 pt-3 pb-8 flex gap-3 shadow-2xl">
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="btn-ghost flex-1 text-sm"
+                className="btn-ghost flex-1 text-sm font-semibold rounded-xl border border-[var(--border)]"
+                style={{ minHeight: '44px' }}
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleAddSong}
                 disabled={!selectedSongId || addingSong}
-                className="btn-primary flex-1 text-sm disabled:opacity-50"
+                className="btn-primary flex-1 text-sm font-bold rounded-xl disabled:opacity-50"
+                style={{ minHeight: '44px' }}
               >
-                {addingSong ? 'Adding…' : 'Add to Setlist'}
+                {addingSong ? t('saving') : t('add_song')}
               </button>
             </div>
           </div>
         </>
       )}
 
-      {/* Modal: Edit Override Note */}
+      {/* Modal: Edit Override Note (Elevated with Sticky Footer) */}
       {editingNoteForSong && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/60" onClick={() => setEditingNoteForSong(null)} />
-          <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] animate-slide-up p-5">
-            <h2 className="text-base font-bold text-[var(--t-pri)] mb-1">
-              Live Note for {editingNoteForSong.song.title}
-            </h2>
-            <p className="text-xs text-[var(--t-dim)] mb-4">
-              Specific cues for this gig (e.g. &ldquo;Segue directly into next song&rdquo;, &ldquo;Extend guitar solo&rdquo;)
-            </p>
+          <div
+            className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm animate-fade-in"
+            onClick={() => setEditingNoteForSong(null)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] animate-slide-up flex flex-col max-h-[85dvh]">
+            <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="w-10 h-1 rounded-full bg-[var(--border)]" />
+            </div>
 
-            <textarea
-              value={overrideNoteText}
-              onChange={(e) => setOverrideNoteText(e.target.value)}
-              rows={3}
-              placeholder="Live note..."
-              className="input resize-none mb-4"
-              autoFocus
-            />
+            <div className="px-5 py-3 flex-1 overflow-y-auto">
+              <h2 className="text-base font-bold text-[var(--t-pri)] mb-1">
+                {t('live_note_modal_title')} {editingNoteForSong.song.title}
+              </h2>
+              <p className="text-xs text-[var(--t-dim)] mb-4">
+                {t('live_note_modal_desc')}
+              </p>
 
-            <div className="flex gap-3">
+              <textarea
+                value={overrideNoteText}
+                onChange={(e) => setOverrideNoteText(e.target.value)}
+                rows={3}
+                placeholder="..."
+                className="input resize-none mb-2"
+                autoFocus
+              />
+            </div>
+
+            {/* Elevated Sticky Actions Footer */}
+            <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--s2)] px-5 pt-3 pb-8 flex gap-3 shadow-2xl">
               <button
                 type="button"
                 onClick={() => setEditingNoteForSong(null)}
-                className="btn-ghost flex-1 text-sm"
+                className="btn-ghost flex-1 text-sm font-semibold rounded-xl border border-[var(--border)]"
+                style={{ minHeight: '44px' }}
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleSaveOverrideNote}
-                className="btn-primary flex-1 text-sm"
+                className="btn-primary flex-1 text-sm font-bold rounded-xl"
+                style={{ minHeight: '44px' }}
               >
-                Save Note
+                {t('save')}
               </button>
             </div>
           </div>
         </>
       )}
-    </>
+    </div>
   )
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import type { SectionType, SectionWithEvents } from '@/types'
 import { SECTION_COLORS } from '@/types'
+import { useI18n } from '@/lib/i18n/context'
 
 export interface SectionFormData {
   type: SectionType
@@ -44,6 +45,7 @@ export default function AddSectionModal({
   onClose,
   onSave,
 }: AddSectionModalProps) {
+  const { t } = useI18n()
   const [form, setForm] = useState<SectionFormData>(DEFAULT_FORM)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -80,7 +82,7 @@ export default function AddSectionModal({
       await onSave(form)
       onClose()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to save section.')
+      setError(err instanceof Error ? err.message : 'Error.')
     } finally {
       setSaving(false)
     }
@@ -88,31 +90,35 @@ export default function AddSectionModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] animate-slide-up overflow-y-auto max-h-[92dvh]">
+      <div
+        className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm animate-fade-in"
+        onClick={onClose}
+      />
+      <div className="fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] animate-slide-up flex flex-col max-h-[90dvh]">
         {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-2">
+        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full bg-[var(--border)]" />
         </div>
 
-        <div className="px-4 pb-8">
-          <h2 className="text-base font-semibold text-[var(--t-pri)] mb-5">
-            {editing ? 'Edit Section' : 'Add Section'}
+        {/* Scrollable form body */}
+        <div className="px-5 overflow-y-auto flex-1 pb-4">
+          <h2 className="text-base font-bold text-[var(--t-pri)] mb-4">
+            {editing ? t('edit_section') : t('add_section_title')}
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form id="section-form" onSubmit={handleSubmit} className="space-y-4">
             {/* Section type grid */}
             <div>
-              <p className="label">Type</p>
+              <p className="label">{t('section_type')}</p>
               <div className="grid grid-cols-4 gap-1.5">
-                {SECTION_TYPES.map((t) => {
-                  const color = SECTION_COLORS[t]
-                  const active = form.type === t
+                {SECTION_TYPES.map((typeKey) => {
+                  const color = SECTION_COLORS[typeKey]
+                  const active = form.type === typeKey
                   return (
                     <button
-                      key={t}
+                      key={typeKey}
                       type="button"
-                      onClick={() => set('type', t)}
+                      onClick={() => set('type', typeKey)}
                       className="rounded-lg py-2 text-xs font-bold uppercase tracking-wide transition-all border"
                       style={{
                         backgroundColor: active ? `${color}2A` : 'var(--s3)',
@@ -120,7 +126,7 @@ export default function AddSectionModal({
                         borderColor: active ? color : 'transparent',
                       }}
                     >
-                      {t}
+                      {typeKey}
                     </button>
                   )
                 })}
@@ -130,8 +136,8 @@ export default function AddSectionModal({
             {/* Label */}
             <div>
               <label className="label">
-                Custom label{' '}
-                <span className="text-[var(--t-dim)] normal-case font-normal">(optional)</span>
+                {t('custom_label')}{' '}
+                <span className="text-[var(--t-dim)] normal-case font-normal">({t('optional')})</span>
               </label>
               <input
                 type="text"
@@ -145,7 +151,7 @@ export default function AddSectionModal({
             {/* Bars */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="label">Bar start</label>
+                <label className="label">{t('bar_start')}</label>
                 <input
                   type="number"
                   required
@@ -156,7 +162,7 @@ export default function AddSectionModal({
                 />
               </div>
               <div>
-                <label className="label">Bar end</label>
+                <label className="label">{t('bar_end')}</label>
                 <input
                   type="number"
                   required
@@ -171,8 +177,8 @@ export default function AddSectionModal({
             {/* BPM override */}
             <div>
               <label className="label">
-                BPM override{' '}
-                <span className="text-[var(--t-dim)] normal-case font-normal">(optional)</span>
+                {t('bpm_override')}{' '}
+                <span className="text-[var(--t-dim)] normal-case font-normal">({t('optional')})</span>
               </label>
               <input
                 type="number"
@@ -182,7 +188,7 @@ export default function AddSectionModal({
                 onChange={(e) =>
                   set('bpm_override', e.target.value ? Number(e.target.value) : null)
                 }
-                placeholder="Inherits from song"
+                placeholder={t('bpm_override_placeholder')}
                 className="input"
               />
             </div>
@@ -190,14 +196,14 @@ export default function AddSectionModal({
             {/* Rhythm notes */}
             <div>
               <label className="label">
-                Rhythm notes{' '}
-                <span className="text-[var(--t-dim)] normal-case font-normal">(optional)</span>
+                {t('rhythm_notes')}{' '}
+                <span className="text-[var(--t-dim)] normal-case font-normal">({t('optional')})</span>
               </label>
               <input
                 type="text"
                 value={form.rhythm_notes}
                 onChange={(e) => set('rhythm_notes', e.target.value)}
-                placeholder="e.g. Straight 8s, half-time shuffle…"
+                placeholder={t('rhythm_notes_placeholder')}
                 className="input"
               />
             </div>
@@ -205,14 +211,14 @@ export default function AddSectionModal({
             {/* Notes */}
             <div>
               <label className="label">
-                Notes{' '}
-                <span className="text-[var(--t-dim)] normal-case font-normal">(optional)</span>
+                {t('section_notes')}{' '}
+                <span className="text-[var(--t-dim)] normal-case font-normal">({t('optional')})</span>
               </label>
               <textarea
                 value={form.notes}
                 onChange={(e) => set('notes', e.target.value)}
                 rows={2}
-                placeholder="Any extra instructions…"
+                placeholder="…"
                 className="input resize-none"
               />
             </div>
@@ -222,20 +228,28 @@ export default function AddSectionModal({
                 {error}
               </p>
             )}
-
-            <div className="flex gap-3 pt-1">
-              <button type="button" onClick={onClose} className="btn-ghost flex-1 text-sm">
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="btn-primary flex-1 text-sm disabled:opacity-50"
-              >
-                {saving ? 'Saving…' : editing ? 'Save changes' : 'Add section'}
-              </button>
-            </div>
           </form>
+        </div>
+
+        {/* Elevated Sticky Actions Footer — NEVER covered by system bars */}
+        <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--s2)] px-5 pt-3 pb-8 flex gap-3 shadow-2xl">
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-ghost flex-1 text-sm font-semibold rounded-xl border border-[var(--border)]"
+            style={{ minHeight: '44px' }}
+          >
+            {t('cancel')}
+          </button>
+          <button
+            form="section-form"
+            type="submit"
+            disabled={saving}
+            className="btn-primary flex-1 text-sm font-bold rounded-xl disabled:opacity-50"
+            style={{ minHeight: '44px' }}
+          >
+            {saving ? t('saving') : editing ? t('save_changes') : t('save')}
+          </button>
         </div>
       </div>
     </>

@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from 'next'
+// CSS side-effect imports are handled by Next.js at build time.
+// @ts-expect-error Next.js resolves global CSS imports outside TypeScript's module declarations.
 import './globals.css'
 import BottomNav from '@/components/ui/BottomNav'
+import { I18nProvider } from '@/lib/i18n/context'
 
 export const metadata: Metadata = {
   title: 'SETSONG',
@@ -23,7 +26,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: '#0A0A0A',
-  viewportFit: 'cover', // needed for notched devices (safe-area-inset)
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
@@ -33,12 +36,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className="antialiased">
-        <main className="pb-[56px]">
-          {/* pb-[56px] = height of BottomNav — prevents content hiding behind it */}
-          {children}
-        </main>
-        <BottomNav />
+      <body className="antialiased min-h-dvh bg-[var(--bg)] text-[var(--t-pri)]">
+        <I18nProvider>
+          <main className="min-h-dvh">
+            {children}
+          </main>
+          <BottomNav />
+        </I18nProvider>
       </body>
     </html>
   )
