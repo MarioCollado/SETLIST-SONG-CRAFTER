@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   CSS CUSTOM PROPERTIES — dark theme
+───────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --bg:      #0A0A0A;
+  --s1:      #111315;
+  --s2:      #151719;
+  --s3:      #1C1F22;
+
+  /* Borders */
+  --border:  #222527;
+
+  /* Text */
+  --t-pri:   #F2F2F2;
+  --t-sec:   #7A8088;
+  --t-dim:   #3D4248;
+
+  /* Touch target minimum */
+  --touch:   44px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BASE RESET
+───────────────────────────────────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg);
+    color: var(--t-pri);
+    /* Prevent text size adjustment on orientation change */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Prevent pull-to-refresh interfering with performance mode */
+    overscroll-behavior: none;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--t-pri);
+    min-height: 100dvh;
+    /* Safe area insets for notched devices */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Scrollbar — dark minimal */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--t-dim); }
+
+  /* Focus ring */
+  :focus-visible {
+    outline: 2px solid var(--t-sec);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Remove default focus for mouse users */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   COMPONENT UTILITIES
+───────────────────────────────────────────────────────────────────────────── */
+@layer components {
+  /* Card */
+  .card {
+    @apply rounded-xl border bg-[var(--s2)];
+    border-color: var(--border);
+  }
+
+  /* Touch-safe button base */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-lg font-medium
+           transition-colors duration-150 select-none cursor-pointer;
+    min-height: var(--touch);
+    min-width: var(--touch);
+  }
+
+  .btn-primary {
+    @apply btn bg-[var(--t-pri)] text-[var(--bg)] hover:bg-white active:scale-[0.97];
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-[var(--t-sec)] hover:bg-[var(--s3)]
+           hover:text-[var(--t-pri)] active:scale-[0.97];
+  }
+
+  .btn-danger {
+    @apply btn bg-transparent text-[#E05555] hover:bg-[#E0555520] active:scale-[0.97];
+  }
+
+  /* Input */
+  .input {
+    @apply w-full rounded-lg px-3 py-2.5 text-sm text-[var(--t-pri)]
+           bg-[var(--s3)] border border-[var(--border)]
+           placeholder:text-[var(--t-dim)]
+           focus:outline-none focus:border-[var(--t-sec)]
+           transition-colors duration-150;
+    min-height: var(--touch);
+  }
+
+  /* Label */
+  .label {
+    @apply block text-xs font-medium text-[var(--t-sec)] mb-1.5 uppercase tracking-wide;
+  }
+
+  /* Section color bar (left border accent) */
+  .section-bar {
+    @apply w-1 rounded-full flex-shrink-0 self-stretch;
+  }
+
+  /* Bottom navigation safe area */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 z-50;
+    padding-bottom: env(safe-area-inset-bottom);
+    background-color: var(--s1);
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PERFORMANCE MODE — utility overrides
+───────────────────────────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Full-height layout without address bar bounce */
+  .h-dvh { height: 100dvh; }
+  .min-h-dvh { min-height: 100dvh; }
+
+  /* Prevent overscroll in performance mode */
+  .overscroll-none { overscroll-behavior: none; }
+
+  /* Text truncation */
+  .truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
