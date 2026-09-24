@@ -37,6 +37,7 @@ export const translations = {
 
     // Songs page
     no_songs: 'No hay canciones todavía.',
+    no_songs_yet: 'No se encontraron canciones.',
     no_songs_hint: 'Toca + Nuevo para añadir la primera canción a tu biblioteca.',
     no_details: 'Sin detalles técnicos aún',
 
@@ -169,6 +170,7 @@ export const translations = {
     songs_count: 'songs',
 
     no_songs: 'No songs yet.',
+    no_songs_yet: 'No songs found.',
     no_songs_hint: 'Tap + New to add your first song to the library.',
     no_details: 'No details yet',
 
@@ -293,6 +295,7 @@ export const translations = {
     songs_count: 'morceaux',
 
     no_songs: 'Aucun morceau pour le moment.',
+    no_songs_yet: 'Aucun morceau trouvé.',
     no_songs_hint: 'Appuyez sur + Nouveau pour ajouter un morceau à votre bibliothèque.',
     no_details: 'Pas encore de détails techniques',
 
@@ -417,6 +420,7 @@ export const translations = {
     songs_count: 'Songs',
 
     no_songs: 'Noch keine Songs vorhanden.',
+    no_songs_yet: 'Keine Songs gefunden.',
     no_songs_hint: 'Tippe auf + Neu, um Songs hinzuzufügen.',
     no_details: 'Noch keine technischen Details',
 
@@ -541,6 +545,7 @@ export const translations = {
     songs_count: 'músicas',
 
     no_songs: 'Ainda não existem músicas.',
+    no_songs_yet: 'Nenhuma música encontrada.',
     no_songs_hint: 'Toque em + Novo para adicionar a primeira música.',
     no_details: 'Sem detalhes técnicos ainda',
 
@@ -665,6 +670,7 @@ export const translations = {
     songs_count: 'cançons',
 
     no_songs: 'Encara no hi ha cançons.',
+    no_songs_yet: 'No s’han trobat cançons.',
     no_songs_hint: 'Toca + Nou per afegir la primera cançó a la biblioteca.',
     no_details: 'Sense detalls tècnics encara',
 

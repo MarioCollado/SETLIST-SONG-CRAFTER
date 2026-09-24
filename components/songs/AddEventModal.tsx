@@ -93,12 +93,12 @@ export default function AddEventModal({
         className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
       />
-      <div className="fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] animate-slide-up flex flex-col max-h-[90dvh]">
+      <div className="fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] animate-slide-up flex flex-col max-h-[calc(100dvh-env(safe-area-inset-top))]">
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full bg-[var(--border)]" />
         </div>
 
-        <div className="px-5 overflow-y-auto flex-1 pb-4">
+        <div className="px-5 overflow-y-auto flex-1 min-h-0 pb-4">
           <h2 className="text-base font-bold text-[var(--t-pri)] mb-4">
             {editing ? t('edit_cue') : t('add_cue')}
           </h2>
@@ -198,7 +198,7 @@ export default function AddEventModal({
         </div>
 
         {/* Elevated Sticky Actions Footer — NEVER covered by system bars */}
-        <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--s2)] px-5 pt-3 pb-8 flex gap-3 shadow-2xl">
+        <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--s2)] px-5 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] flex gap-3 shadow-2xl">
           <button
             type="button"
             onClick={onClose}

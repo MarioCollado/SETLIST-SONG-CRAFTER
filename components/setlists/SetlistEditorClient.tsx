@@ -448,7 +448,7 @@ export default function SetlistEditorClient({
             className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm animate-fade-in"
             onClick={() => setShowAddModal(false)}
           />
-          <div className="fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] animate-slide-up flex flex-col max-h-[88dvh]">
+          <div className="fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] animate-slide-up flex flex-col min-h-0 max-h-[calc(100dvh-env(safe-area-inset-top))]">
             <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
               <div className="w-10 h-1 rounded-full bg-[var(--border)]" />
             </div>
@@ -482,7 +482,7 @@ export default function SetlistEditorClient({
               </div>
             </div>
 
-            <div className="px-5 py-3 overflow-y-auto flex-1 space-y-2">
+            <div className="px-5 py-3 overflow-y-auto flex-1 min-h-0 space-y-2">
               {candidateSongs.length === 0 ? (
                 <p className="text-xs text-[var(--t-dim)] py-8 text-center">
                   {t('all_songs_in_setlist')}
@@ -515,7 +515,7 @@ export default function SetlistEditorClient({
             </div>
 
             {/* Elevated Sticky Actions Footer */}
-            <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--s2)] px-5 pt-3 pb-8 flex gap-3 shadow-2xl">
+            <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--s2)] px-5 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] flex gap-3 shadow-2xl">
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
@@ -545,12 +545,12 @@ export default function SetlistEditorClient({
             className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm animate-fade-in"
             onClick={() => setEditingNoteForSong(null)}
           />
-          <div className="fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] animate-slide-up flex flex-col max-h-[85dvh]">
+          <div className="fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] animate-slide-up flex flex-col min-h-0 max-h-[calc(100dvh-env(safe-area-inset-top))]">
             <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
               <div className="w-10 h-1 rounded-full bg-[var(--border)]" />
             </div>
 
-            <div className="px-5 py-3 flex-1 overflow-y-auto">
+            <div className="px-5 py-3 flex-1 min-h-0 overflow-y-auto">
               <h2 className="text-base font-bold text-[var(--t-pri)] mb-1">
                 {t('live_note_modal_title')} {editingNoteForSong.song.title}
               </h2>
@@ -569,7 +569,7 @@ export default function SetlistEditorClient({
             </div>
 
             {/* Elevated Sticky Actions Footer */}
-            <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--s2)] px-5 pt-3 pb-8 flex gap-3 shadow-2xl">
+            <div className="flex-shrink-0 border-t border-[var(--border)] bg-[var(--s2)] px-5 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] flex gap-3 shadow-2xl">
               <button
                 type="button"
                 onClick={() => setEditingNoteForSong(null)}

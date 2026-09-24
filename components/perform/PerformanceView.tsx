@@ -527,7 +527,7 @@ export default function PerformanceView({ setlist }: PerformanceViewProps) {
             className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm animate-fade-in"
             onClick={() => setShowDrawer(false)}
           />
-          <div className="fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] p-4 max-h-[88dvh] flex flex-col animate-slide-up pb-8">
+          <div className="fixed bottom-0 left-0 right-0 z-[110] rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] p-4 max-h-[calc(100dvh-env(safe-area-inset-top))] flex flex-col min-h-0 animate-slide-up pb-[calc(1rem+env(safe-area-inset-bottom))]">
             {/* Drawer Header */}
             <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
               <div>

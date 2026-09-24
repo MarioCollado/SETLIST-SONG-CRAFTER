@@ -32,7 +32,7 @@ export default function LanguageSelector({ compact = false }: LanguageSelectorPr
             className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm animate-fade-in"
             onClick={() => setIsOpen(false)}
           />
-          <div className="fixed bottom-0 left-0 right-0 z-[90] rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] p-5 animate-slide-up pb-10">
+          <div className="fixed bottom-0 left-0 right-0 z-[90] rounded-t-2xl bg-[var(--s1)] border-t border-[var(--border)] p-5 max-h-[calc(100dvh-env(safe-area-inset-top))] overflow-y-auto animate-slide-up pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
             <div className="flex items-center justify-between pb-3 border-b border-[var(--border)] mb-4">
               <h3 className="text-sm font-extrabold uppercase tracking-wide text-[var(--t-pri)]">
                 {t('language')}
